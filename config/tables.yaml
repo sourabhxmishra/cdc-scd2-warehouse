@@ -1,0 +1,13 @@
+# Tables tracked by the CDC -> SCD2 pipeline.
+# business_key : the natural/business key that identifies a dimension member
+# tracked_cols : columns whose change opens a new SCD2 version (a hash over these detects change)
+# ts_col       : the change timestamp used for valid_from / valid_to effective-dating
+# lsn_col      : the CDC log sequence number driving the incremental watermark
+tables:
+  - name: customer
+    source_table: dbo.customer
+    business_key: cust_key
+    tracked_cols: [name, city, tier]
+    ts_col: change_ts
+    lsn_col: lsn
+    scd: type2

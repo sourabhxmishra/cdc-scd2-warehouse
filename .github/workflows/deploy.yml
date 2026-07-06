@@ -1,0 +1,33 @@
+name: deploy
+
+# Manual deploy of the source SQL + storage infra. Kept separate from CI so the push badge
+# stays green without cloud credentials in the repo. Running it needs an AZURE_CREDENTIALS
+# secret, a RESOURCE_GROUP variable, and a SQL_ADMIN_PASSWORD secret; the prod environment
+# requires a reviewer to approve.
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for the deployment'
+        required: false
+        default: 'manual infra deployment'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: deploy infra (Bicep)
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Deploy infra
+        run: |
+          az deployment group create \
+            -g ${{ vars.RESOURCE_GROUP }} \
+            -f infra/main.bicep \
+            -p sqlAdminPassword='${{ secrets.SQL_ADMIN_PASSWORD }}'
