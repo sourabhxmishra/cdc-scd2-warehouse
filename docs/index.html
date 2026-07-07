@@ -171,7 +171,7 @@
       try {
         pyodide = await loadPyodide();
         $("bootmsg").textContent = "Loading the SCD2 engine…";
-        const code = await (await fetch(BASE)).text();
+        const code = await (await fetch(BASE, { cache: "reload" })).text();
         pyodide.FS.writeFile("/scd2.py", code);
         pyodide.runPython(`
 import sys, json
