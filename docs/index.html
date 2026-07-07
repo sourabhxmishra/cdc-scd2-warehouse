@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CDC → SCD2 Warehouse · Project</title>
+  <meta name="description" content="Streaming ingestion to a Delta medallion and a live Power BI Direct Lake dashboard on Azure — exactly-once, watermarked, schema-evolving." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --surface: #0c0c0c; --ink: #d7e2ea; --muted: #9aa3ad; --faint: #6b7178;
+      --card: rgba(255,255,255,0.03); --card2: rgba(255,255,255,0.05);
+      --line: rgba(255,255,255,0.1); --accent: #d7e2ea; --accent-ink: #0c0c0c;
+      --ok: #28c840; --warn: #febc2e; --red: #ff5f57;
+      --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--surface); color: var(--ink); font-family: "Kanit", sans-serif; line-height: 1.6; min-height: 100vh; }
+    a { color: inherit; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+
+    header { border-bottom: 1px solid var(--line); padding: 16px 0; position: sticky; top: 0; background: rgba(12,12,12,0.85); backdrop-filter: blur(10px); z-index: 10; }
+    .headrow { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot.r { background: var(--red); } .dot.y { background: var(--warn); } .dot.g { background: var(--ok); }
+    .brand .path { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+    .headlinks { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 8px 16px; font-size: 14px; font-weight: 600; text-decoration: none; border: 1px solid var(--line); background: var(--card); color: var(--ink); transition: background .2s, transform .2s; cursor: pointer; }
+    .btn:hover { background: var(--card2); }
+    .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+    .btn.primary:hover { transform: translateY(-1px); }
+
+    .hero { padding: 52px 0 24px; }
+    .eyebrow { display: inline-block; font-family: var(--mono); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; margin-bottom: 18px; }
+    h1.title { font-size: clamp(30px, 5vw, 46px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.08; }
+    .tagline { color: var(--muted); margin-top: 14px; font-size: 17px; }
+    .tech { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+    .tech span { font-family: var(--mono); font-size: 12px; color: var(--muted); border: 1px solid var(--line); background: rgba(255,255,255,0.03); border-radius: 8px; padding: 5px 10px; }
+    .cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
+
+    .divider { border: 0; border-top: 1px solid var(--line); margin: 20px 0 8px; }
+
+    /* rendered markdown */
+    .md { padding: 20px 0 60px; }
+    .md h1, .md h2, .md h3, .md h4 { line-height: 1.25; margin: 34px 0 12px; letter-spacing: -0.01em; }
+    .md h1 { font-size: 30px; font-weight: 800; }
+    .md h2 { font-size: 24px; font-weight: 700; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+    .md h3 { font-size: 19px; font-weight: 700; }
+    .md p { margin: 12px 0; color: #c7ced6; }
+    .md a { color: #bfe3ff; text-decoration: underline; text-underline-offset: 3px; }
+    .md ul, .md ol { margin: 12px 0 12px 22px; color: #c7ced6; }
+    .md li { margin: 5px 0; }
+    .md blockquote { border-left: 3px solid var(--faint); padding: 6px 16px; margin: 16px 0; color: var(--muted); background: rgba(255,255,255,0.02); border-radius: 0 8px 8px 0; }
+    .md code { font-family: var(--mono); font-size: 13px; background: rgba(255,255,255,0.07); padding: 2px 6px; border-radius: 5px; }
+    .md pre { background: rgba(0,0,0,0.4); border: 1px solid var(--line); border-radius: 12px; padding: 16px; overflow-x: auto; margin: 16px 0; }
+    .md pre code { background: none; padding: 0; font-size: 13px; line-height: 1.6; color: var(--ink); }
+    .md img { max-width: 100%; border-radius: 12px; border: 1px solid var(--line); margin: 10px 0; }
+    .md table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 14px; display: block; overflow-x: auto; }
+    .md th, .md td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; }
+    .md th { background: rgba(255,255,255,0.04); font-weight: 600; }
+    .md pre.mermaid { background: #f7fafc; border-color: var(--line); text-align: center; }
+    .md details { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin: 14px 0; }
+    .md summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+    .md hr { border: 0; border-top: 1px solid var(--line); margin: 26px 0; }
+    .loading { color: var(--faint); font-family: var(--mono); font-size: 14px; padding: 20px 0; }
+
+    footer { border-top: 1px solid var(--line); padding: 22px 0 46px; color: var(--faint); font-size: 13px; }
+    footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap headrow">
+      <div class="brand">
+        <span class="dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></span>
+        <span class="path" id="hpath">~/projects/</span>
+      </div>
+      <div class="headlinks">
+        <a class="btn" id="ghlink" target="_blank" rel="noopener">View on GitHub</a>
+        <a class="btn primary" href="https://www.sourabhxmishra.com/projects" target="_blank" rel="noopener">← Portfolio</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Project · Explore the build</span>
+      <h1 class="title" id="title"></h1>
+      <p class="tagline" id="tagline"></p>
+      <div class="tech" id="tech"></div>
+      <div class="cta">
+        <a class="btn primary" id="ghcta" target="_blank" rel="noopener">View source on GitHub</a>
+        <a class="btn" href="#readme">Read the write-up ↓</a>
+      </div>
+    </section>
+    <hr class="divider" />
+    <article class="md" id="readme"><p class="loading">Loading project write-up…</p></article>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      A project by <a href="https://www.sourabhxmishra.com" target="_blank" rel="noopener">Sourabh Mishra</a> ·
+      <a id="ghfoot" target="_blank" rel="noopener">source on GitHub</a>. Rendered live from the repo's README.
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+    // ---- per-project config ----
+    const OWNER = "sourabhxmishra";
+    const REPO  = "cdc-scd2-warehouse";
+    const TITLE = "CDC → SCD2 Warehouse";
+    const TAGLINE = "Azure SQL Change Data Capture → watermarked extract → idempotent SCD Type 2 MERGE — a tested pure-Python engine plus a production Delta MERGE, all Bicep-provisioned.";
+    const TECH = ["Python", "Azure SQL", "Delta Lake", "Databricks", "CDC", "Bicep"];
+    // ----------------------------
+
+    const gh = `https://github.com/${OWNER}/${REPO}`;
+    const rawBase = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/`;
+    const blobBase = `https://github.com/${OWNER}/${REPO}/blob/main/`;
+    const cdn = `https://cdn.jsdelivr.net/gh/${OWNER}/${REPO}@main/README.md`;
+
+    document.title = `${TITLE} · Project`;
+    document.getElementById("hpath").textContent = `~/projects/${REPO}`;
+    document.getElementById("title").textContent = TITLE;
+    document.getElementById("tagline").textContent = TAGLINE;
+    document.getElementById("ghlink").href = gh;
+    document.getElementById("ghcta").href = gh;
+    document.getElementById("ghfoot").href = gh;
+    document.getElementById("tech").innerHTML = TECH.map((t) => `<span>${t}</span>`).join("");
+
+    function rewriteLinks(root) {
+      root.querySelectorAll("img").forEach((img) => {
+        img.addEventListener("error", () => { img.style.display = "none"; });
+        const s = img.getAttribute("src") || "";
+        if (!/^(https?:)?\/\//.test(s) && !s.startsWith("data:")) {
+          const badge = s.match(/actions\/workflows\/.*badge\.svg.*$/);
+          if (badge) { img.src = `https://github.com/${OWNER}/${REPO}/${badge[0]}`; }
+          else { try { img.src = new URL(s.replace(/^\.\//, ""), rawBase).href; } catch (e) {} }
+        }
+      });
+      root.querySelectorAll("a").forEach((a) => {
+        const h = a.getAttribute("href") || "";
+        if (h.startsWith("#")) return;
+        if (!/^(https?:)?\/\//.test(h) && !h.startsWith("mailto:")) {
+          try { a.href = new URL(h.replace(/^\.\//, ""), blobBase).href; } catch (e) {}
+          a.target = "_blank"; a.rel = "noopener";
+        }
+      });
+    }
+
+    function extractMermaid(root) {
+      root.querySelectorAll("code.language-mermaid").forEach((code) => {
+        const pre = code.closest("pre") || code;
+        const div = document.createElement("pre");
+        div.className = "mermaid";
+        div.textContent = code.textContent;
+        pre.replaceWith(div);
+      });
+    }
+
+    (async () => {
+      const el = document.getElementById("readme");
+      try {
+        const res = await fetch(cdn);
+        if (!res.ok) throw new Error("README " + res.status);
+        let md = await res.text();
+        el.innerHTML = marked.parse(md, { gfm: true, breaks: false });
+        // drop the first H1 (title already shown in hero)
+        const firstH1 = el.querySelector("h1");
+        if (firstH1) firstH1.remove();
+        rewriteLinks(el);
+        extractMermaid(el);
+        mermaid.initialize({ startOnLoad: false, theme: "default", securityLevel: "loose" });
+        await mermaid.run({ querySelector: ".mermaid" });
+      } catch (e) {
+        el.innerHTML = `<p class="loading">Couldn't load the write-up. <a href="${gh}" style="color:#bfe3ff">Read it on GitHub →</a></p>`;
+        console.error(e);
+      }
+    })();
+  </script>
+</body>
+</html>
