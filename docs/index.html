@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CDC → SCD2 Warehouse · Project</title>
-  <meta name="description" content="Streaming ingestion to a Delta medallion and a live Power BI Direct Lake dashboard on Azure — exactly-once, watermarked, schema-evolving." />
+  <title>CDC → SCD2 · Live Demo</title>
+  <meta name="description" content="Apply CDC change batches and watch a Slowly Changing Dimension (Type 2) update live — history preserved, idempotent, deduped. Runs the real Python engine in your browser via Pyodide." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -13,15 +13,14 @@
       --surface: #0c0c0c; --ink: #d7e2ea; --muted: #9aa3ad; --faint: #6b7178;
       --card: rgba(255,255,255,0.03); --card2: rgba(255,255,255,0.05);
       --line: rgba(255,255,255,0.1); --accent: #d7e2ea; --accent-ink: #0c0c0c;
-      --ok: #28c840; --warn: #febc2e; --red: #ff5f57;
+      --ok: #28c840; --warn: #febc2e; --red: #ff5f57; --blue: #7cc0ff;
       --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
-    body { background: var(--surface); color: var(--ink); font-family: "Kanit", sans-serif; line-height: 1.6; min-height: 100vh; }
+    body { background: var(--surface); color: var(--ink); font-family: "Kanit", sans-serif; line-height: 1.5; min-height: 100vh; }
     a { color: inherit; }
-    .wrap { max-width: 900px; margin: 0 auto; padding: 0 20px; }
-
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
     header { border-bottom: 1px solid var(--line); padding: 16px 0; position: sticky; top: 0; background: rgba(12,12,12,0.85); backdrop-filter: blur(10px); z-index: 10; }
     .headrow { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
     .brand { display: flex; align-items: center; gap: 10px; }
@@ -34,54 +33,62 @@
     .btn:hover { background: var(--card2); }
     .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
     .btn.primary:hover { transform: translateY(-1px); }
-
-    .hero { padding: 52px 0 24px; }
-    .eyebrow { display: inline-block; font-family: var(--mono); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; margin-bottom: 18px; }
-    h1.title { font-size: clamp(30px, 5vw, 46px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.08; }
-    .tagline { color: var(--muted); margin-top: 14px; font-size: 17px; }
-    .tech { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
-    .tech span { font-family: var(--mono); font-size: 12px; color: var(--muted); border: 1px solid var(--line); background: rgba(255,255,255,0.03); border-radius: 8px; padding: 5px 10px; }
-    .cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
-
-    .divider { border: 0; border-top: 1px solid var(--line); margin: 20px 0 8px; }
-
-    /* rendered markdown */
-    .md { padding: 20px 0 60px; }
-    .md h1, .md h2, .md h3, .md h4 { line-height: 1.25; margin: 34px 0 12px; letter-spacing: -0.01em; }
-    .md h1 { font-size: 30px; font-weight: 800; }
-    .md h2 { font-size: 24px; font-weight: 700; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
-    .md h3 { font-size: 19px; font-weight: 700; }
-    .md p { margin: 12px 0; color: #c7ced6; }
-    .md a { color: #bfe3ff; text-decoration: underline; text-underline-offset: 3px; }
-    .md ul, .md ol { margin: 12px 0 12px 22px; color: #c7ced6; }
-    .md li { margin: 5px 0; }
-    .md blockquote { border-left: 3px solid var(--faint); padding: 6px 16px; margin: 16px 0; color: var(--muted); background: rgba(255,255,255,0.02); border-radius: 0 8px 8px 0; }
-    .md code { font-family: var(--mono); font-size: 13px; background: rgba(255,255,255,0.07); padding: 2px 6px; border-radius: 5px; }
-    .md pre { background: rgba(0,0,0,0.4); border: 1px solid var(--line); border-radius: 12px; padding: 16px; overflow-x: auto; margin: 16px 0; }
-    .md pre code { background: none; padding: 0; font-size: 13px; line-height: 1.6; color: var(--ink); }
-    .md img { max-width: 100%; border-radius: 12px; border: 1px solid var(--line); margin: 10px 0; }
-    .md table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 14px; display: block; overflow-x: auto; }
-    .md th, .md td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; }
-    .md th { background: rgba(255,255,255,0.04); font-weight: 600; }
-    .md pre.mermaid { background: #f7fafc; border-color: var(--line); text-align: center; }
-    .md details { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin: 14px 0; }
-    .md summary { cursor: pointer; font-weight: 600; color: var(--muted); }
-    .md hr { border: 0; border-top: 1px solid var(--line); margin: 26px 0; }
-    .loading { color: var(--faint); font-family: var(--mono); font-size: 14px; padding: 20px 0; }
-
-    footer { border-top: 1px solid var(--line); padding: 22px 0 46px; color: var(--faint); font-size: 13px; }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .hero { padding: 44px 0 22px; }
+    .eyebrow { display: inline-block; font-family: var(--mono); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; margin-bottom: 16px; }
+    h1 { font-size: clamp(28px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+    .sub { color: var(--muted); margin-top: 12px; max-width: 720px; font-size: 16px; }
+    .grid { display: grid; grid-template-columns: 340px 1fr; gap: 20px; padding-bottom: 20px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    .panel { border: 1px solid var(--line); border-radius: 16px; background: var(--card); overflow: hidden; }
+    .panel-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,0.02); }
+    .panel-title { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+    .panel-body { padding: 16px; }
+    .steps { display: flex; flex-direction: column; gap: 10px; }
+    .step { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: rgba(255,255,255,0.02); }
+    .step h4 { font-size: 14px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    .step .rows { font-family: var(--mono); font-size: 11.5px; color: var(--muted); line-height: 1.7; }
+    .step.done { opacity: .55; }
+    .tag { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--faint); }
+    .tag.applied { color: var(--ok); border-color: rgba(40,200,64,.4); }
+    .controls { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+    table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; }
+    th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    th { color: var(--faint); font-weight: 600; text-transform: uppercase; font-size: 10.5px; letter-spacing: .08em; position: sticky; top: 0; background: #0f0f0f; }
+    tbody tr.current td { color: var(--ink); }
+    tbody tr.current td:first-child { box-shadow: inset 3px 0 0 var(--ok); }
+    tbody tr.closed td { color: var(--faint); }
+    tbody tr.closed td:first-child { box-shadow: inset 3px 0 0 var(--faint); }
+    tr.flash td { animation: flash 1.3s ease; }
+    @keyframes flash { 0% { background: rgba(124,192,255,.22); } 100% { background: transparent; } }
+    .pill { display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); }
+    .pill.cur { color: var(--ok); border-color: rgba(40,200,64,.4); }
+    .pill.old { color: var(--faint); }
+    .badge-tier { color: var(--blue); }
+    .status { font-family: var(--mono); font-size: 12px; color: var(--muted); padding: 10px 16px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.02); }
+    .status b { color: var(--ink); }
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 10px; }
+    .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; }
+    footer { border-top: 1px solid var(--line); padding: 22px 0 46px; color: var(--faint); font-size: 13px; margin-top: 10px; }
     footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+    .boot { position: fixed; inset: 0; background: rgba(12,12,12,0.92); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; z-index: 100; }
+    .boot.hidden { display: none !important; }
+    .spinner { width: 34px; height: 34px; border: 3px solid var(--line); border-top-color: var(--ink); border-radius: 50%; animation: spin 0.9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .boot p { color: var(--muted); font-family: var(--mono); font-size: 13px; }
   </style>
 </head>
 <body>
+  <div class="boot" id="boot"><div class="spinner"></div><p id="bootmsg">Booting Python (Pyodide)…</p></div>
+
   <header>
     <div class="wrap headrow">
       <div class="brand">
         <span class="dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></span>
-        <span class="path" id="hpath">~/projects/</span>
+        <span class="path">~/cdc-scd2-warehouse/demo</span>
       </div>
       <div class="headlinks">
-        <a class="btn" id="ghlink" target="_blank" rel="noopener">View on GitHub</a>
+        <a class="btn" href="https://github.com/sourabhxmishra/cdc-scd2-warehouse" target="_blank" rel="noopener">View on GitHub</a>
         <a class="btn primary" href="https://www.sourabhxmishra.com/projects" target="_blank" rel="noopener">← Portfolio</a>
       </div>
     </div>
@@ -89,101 +96,146 @@
 
   <main class="wrap">
     <section class="hero">
-      <span class="eyebrow">Project · Explore the build</span>
-      <h1 class="title" id="title"></h1>
-      <p class="tagline" id="tagline"></p>
-      <div class="tech" id="tech"></div>
-      <div class="cta">
-        <a class="btn primary" id="ghcta" target="_blank" rel="noopener">View source on GitHub</a>
-        <a class="btn" href="#readme">Read the write-up ↓</a>
+      <span class="eyebrow">Live · runs in your browser</span>
+      <h1>CDC → SCD Type 2, applied live</h1>
+      <p class="sub">Apply change-data-capture batches to a customer dimension and watch <b>Slowly Changing Dimension (Type 2)</b> semantics play out — the current version is closed with a <code>valid_to</code> and a new one opens, history is preserved, duplicates are deduped, and unchanged rows are idempotent no-ops. This runs the repo's <b>real pure-Python <code>apply_scd2</code> engine</b> in your browser via Pyodide.</p>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <div class="panel-bar"><span class="panel-title">Incoming CDC batches</span></div>
+        <div class="panel-body">
+          <div class="steps" id="steps"></div>
+          <div class="controls">
+            <button class="btn primary" id="applyBtn">Apply next batch ▶</button>
+            <button class="btn" id="resetBtn">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-bar">
+          <span class="panel-title">SCD2 dimension · <span id="dimName">dim_customer</span></span>
+          <label class="toggle"><input type="checkbox" id="curOnly" /> current only</label>
+        </div>
+        <div style="max-height: 460px; overflow: auto;">
+          <table id="dimTable">
+            <thead><tr><th>customer_id</th><th>name</th><th>city</th><th>tier</th><th>valid_from</th><th>valid_to</th><th>state</th><th>_hash</th></tr></thead>
+            <tbody id="dimBody"></tbody>
+          </table>
+        </div>
+        <div class="status" id="status">Reset — dimension is empty. Apply the first batch.</div>
       </div>
     </section>
-    <hr class="divider" />
-    <article class="md" id="readme"><p class="loading">Loading project write-up…</p></article>
+    <div class="legend">
+      <span>■ <span style="color:var(--ok)">green</span> = current version</span>
+      <span>■ <span style="color:var(--faint)">dim</span> = closed (historical) version</span>
+      <span>flash = touched by the last batch</span>
+    </div>
   </main>
 
   <footer>
     <div class="wrap">
-      A project by <a href="https://www.sourabhxmishra.com" target="_blank" rel="noopener">Sourabh Mishra</a> ·
-      <a id="ghfoot" target="_blank" rel="noopener">source on GitHub</a>. Rendered live from the repo's README.
+      Runs <a href="https://github.com/sourabhxmishra/cdc-scd2-warehouse" target="_blank" rel="noopener">sourabhxmishra/cdc-scd2-warehouse</a>'s real <code>src/scd2.py</code> engine client-side via <a href="https://pyodide.org" target="_blank" rel="noopener">Pyodide</a> — same semantics as the production Delta MERGE. Built by <a href="https://www.sourabhxmishra.com" target="_blank" rel="noopener">Sourabh Mishra</a>.
     </div>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script type="module">
-    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+  <script>
+    const BASE = "https://cdn.jsdelivr.net/gh/sourabhxmishra/cdc-scd2-warehouse@main/src/scd2.py";
+    const BK = "customer_id", TRACKED = ["name", "city", "tier"], TS = "change_ts";
+    const BATCHES = [
+      { label: "① Initial load", note: "3 brand-new keys → 3 open versions inserted", rows: [
+        { customer_id: "C001", name: "Aarav Shah", city: "Pune", tier: "Silver", change_ts: "2026-01-01" },
+        { customer_id: "C002", name: "Diya Rao", city: "Delhi", tier: "Silver", change_ts: "2026-01-01" },
+        { customer_id: "C003", name: "Kabir Menon", city: "Mumbai", tier: "Gold", change_ts: "2026-01-01" },
+      ]},
+      { label: "② City + tier changes", note: "C001 moves city, C002 upgrades tier → old versions closed, new ones opened", rows: [
+        { customer_id: "C001", name: "Aarav Shah", city: "Mumbai", tier: "Silver", change_ts: "2026-02-01" },
+        { customer_id: "C002", name: "Diya Rao", city: "Delhi", tier: "Gold", change_ts: "2026-02-01" },
+      ]},
+      { label: "③ Duplicate + no-op", note: "C003 unchanged = idempotent no-op; C001 emitted twice → dedupe keeps the later event", rows: [
+        { customer_id: "C003", name: "Kabir Menon", city: "Mumbai", tier: "Gold", change_ts: "2026-03-01" },
+        { customer_id: "C001", name: "Aarav Shah", city: "Mumbai", tier: "Silver", change_ts: "2026-03-01" },
+        { customer_id: "C001", name: "Aarav Shah", city: "Bengaluru", tier: "Silver", change_ts: "2026-03-02" },
+      ]},
+      { label: "④ New customer", note: "A new key arrives → single open version inserted", rows: [
+        { customer_id: "C004", name: "Meera Iyer", city: "Chennai", tier: "Platinum", change_ts: "2026-04-01" },
+      ]},
+    ];
 
-    // ---- per-project config ----
-    const OWNER = "sourabhxmishra";
-    const REPO  = "cdc-scd2-warehouse";
-    const TITLE = "CDC → SCD2 Warehouse";
-    const TAGLINE = "Azure SQL Change Data Capture → watermarked extract → idempotent SCD Type 2 MERGE — a tested pure-Python engine plus a production Delta MERGE, all Bicep-provisioned.";
-    const TECH = ["Python", "Azure SQL", "Delta Lake", "Databricks", "CDC", "Bicep"];
-    // ----------------------------
+    const $ = (id) => document.getElementById(id);
+    let pyodide = null, applyFn = null, dim = [], step = 0, lastTouched = new Set();
 
-    const gh = `https://github.com/${OWNER}/${REPO}`;
-    const rawBase = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/`;
-    const blobBase = `https://github.com/${OWNER}/${REPO}/blob/main/`;
-    const cdn = `https://cdn.jsdelivr.net/gh/${OWNER}/${REPO}@main/README.md`;
-
-    document.title = `${TITLE} · Project`;
-    document.getElementById("hpath").textContent = `~/projects/${REPO}`;
-    document.getElementById("title").textContent = TITLE;
-    document.getElementById("tagline").textContent = TAGLINE;
-    document.getElementById("ghlink").href = gh;
-    document.getElementById("ghcta").href = gh;
-    document.getElementById("ghfoot").href = gh;
-    document.getElementById("tech").innerHTML = TECH.map((t) => `<span>${t}</span>`).join("");
-
-    function rewriteLinks(root) {
-      root.querySelectorAll("img").forEach((img) => {
-        img.addEventListener("error", () => { img.style.display = "none"; });
-        const s = img.getAttribute("src") || "";
-        if (!/^(https?:)?\/\//.test(s) && !s.startsWith("data:")) {
-          const badge = s.match(/actions\/workflows\/.*badge\.svg.*$/);
-          if (badge) { img.src = `https://github.com/${OWNER}/${REPO}/${badge[0]}`; }
-          else { try { img.src = new URL(s.replace(/^\.\//, ""), rawBase).href; } catch (e) {} }
-        }
-      });
-      root.querySelectorAll("a").forEach((a) => {
-        const h = a.getAttribute("href") || "";
-        if (h.startsWith("#")) return;
-        if (!/^(https?:)?\/\//.test(h) && !h.startsWith("mailto:")) {
-          try { a.href = new URL(h.replace(/^\.\//, ""), blobBase).href; } catch (e) {}
-          a.target = "_blank"; a.rel = "noopener";
-        }
-      });
-    }
-
-    function extractMermaid(root) {
-      root.querySelectorAll("code.language-mermaid").forEach((code) => {
-        const pre = code.closest("pre") || code;
-        const div = document.createElement("pre");
-        div.className = "mermaid";
-        div.textContent = code.textContent;
-        pre.replaceWith(div);
-      });
-    }
-
-    (async () => {
-      const el = document.getElementById("readme");
+    async function boot() {
       try {
-        const res = await fetch(cdn);
-        if (!res.ok) throw new Error("README " + res.status);
-        let md = await res.text();
-        el.innerHTML = marked.parse(md, { gfm: true, breaks: false });
-        // drop the first H1 (title already shown in hero)
-        const firstH1 = el.querySelector("h1");
-        if (firstH1) firstH1.remove();
-        rewriteLinks(el);
-        extractMermaid(el);
-        mermaid.initialize({ startOnLoad: false, theme: "default", securityLevel: "loose" });
-        await mermaid.run({ querySelector: ".mermaid" });
-      } catch (e) {
-        el.innerHTML = `<p class="loading">Couldn't load the write-up. <a href="${gh}" style="color:#bfe3ff">Read it on GitHub →</a></p>`;
-        console.error(e);
-      }
-    })();
+        pyodide = await loadPyodide();
+        $("bootmsg").textContent = "Loading the SCD2 engine…";
+        const code = await (await fetch(BASE)).text();
+        pyodide.FS.writeFile("/scd2.py", code);
+        pyodide.runPython(`
+import sys, json
+sys.path.insert(0, "/")
+import scd2
+
+def apply_batch(dim_json, changes_json):
+    dim = json.loads(dim_json)
+    changes = json.loads(changes_json)
+    out = scd2.apply_scd2(dim, changes, business_key="${BK}", tracked_cols=${JSON.stringify(TRACKED)}, ts_col="${TS}")
+    return json.dumps(out)
+`);
+        applyFn = pyodide.globals.get("apply_batch");
+        $("boot").classList.add("hidden");
+        renderSteps(); renderDim();
+      } catch (e) { $("bootmsg").textContent = "Failed to load: " + e.message; console.error(e); }
+    }
+
+    function renderSteps() {
+      $("steps").innerHTML = BATCHES.map((b, i) => `
+        <div class="step ${i < step ? "done" : ""}">
+          <h4>${b.label} <span class="tag ${i < step ? "applied" : ""}">${i < step ? "applied" : "pending"}</span></h4>
+          <div class="rows">${b.rows.map((r) => `${r.customer_id} · ${r.city} · ${r.tier} <span style="color:var(--faint)">@${r.change_ts}</span>`).join("<br/>")}</div>
+          <div style="margin-top:8px;color:var(--faint);font-size:12px">${b.note}</div>
+        </div>`).join("");
+      $("applyBtn").disabled = step >= BATCHES.length;
+      $("applyBtn").textContent = step >= BATCHES.length ? "All batches applied ✓" : `Apply batch ${step + 1} of ${BATCHES.length} ▶`;
+    }
+
+    function renderDim() {
+      const curOnly = $("curOnly").checked;
+      const rows = [...dim].sort((a, b) => (a.customer_id + a.valid_from).localeCompare(b.customer_id + b.valid_from));
+      const shown = curOnly ? rows.filter((r) => r.is_current) : rows;
+      $("dimBody").innerHTML = shown.map((r) => {
+        const cur = r.is_current;
+        const touched = lastTouched.has(r.customer_id + "|" + r.valid_from);
+        return `<tr class="${cur ? "current" : "closed"} ${touched ? "flash" : ""}">
+          <td>${r.customer_id}</td><td>${r.name}</td><td>${r.city}</td>
+          <td class="badge-tier">${r.tier}</td><td>${r.valid_from}</td>
+          <td>${r.valid_to ?? "—"}</td>
+          <td><span class="pill ${cur ? "cur" : "old"}">${cur ? "current" : "closed"}</span></td>
+          <td style="color:var(--faint)">${r._hash}</td></tr>`;
+      }).join("") || `<tr><td colspan="8" style="color:var(--faint);text-align:center;padding:24px">empty — apply a batch</td></tr>`;
+      const curCount = dim.filter((r) => r.is_current).length;
+      $("status").innerHTML = `<b>${dim.length}</b> total versions · <b>${curCount}</b> current · <b>${step}</b>/${BATCHES.length} batches applied`;
+    }
+
+    function applyNext() {
+      if (step >= BATCHES.length || !applyFn) return;
+      const batch = BATCHES[step];
+      const before = new Set(dim.map((r) => r.customer_id + "|" + r.valid_from + "|" + r.is_current));
+      const out = JSON.parse(applyFn(JSON.stringify(dim), JSON.stringify(batch.rows)));
+      lastTouched = new Set();
+      out.forEach((r) => { const k = r.customer_id + "|" + r.valid_from + "|" + r.is_current; if (!before.has(k)) lastTouched.add(r.customer_id + "|" + r.valid_from); });
+      dim = out; step++;
+      renderSteps(); renderDim();
+    }
+
+    function reset() { dim = []; step = 0; lastTouched = new Set(); renderSteps(); renderDim(); }
+
+    $("applyBtn").addEventListener("click", applyNext);
+    $("resetBtn").addEventListener("click", reset);
+    $("curOnly").addEventListener("change", renderDim);
+    boot();
   </script>
 </body>
 </html>
